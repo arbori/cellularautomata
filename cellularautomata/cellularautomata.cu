@@ -4,150 +4,40 @@
 #include "cellularautomata.h"
 #include "entropy.h"
 
-#include <stdio.h>
+#include <iostream>
+#include <cmath>
+
+using namespace std;
 
 int main() {
 	rule_t n = 30;
 	size_t r = 1;
 	cell_t k = 2;
-	size_t t = 300;
+	size_t t = 8;
 
-	env_t init(101);
+	env_t init(7);
 	size_t pos = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
+	init.cells[pos++] = 1;
 	init.cells[pos++] = 0;
 	init.cells[pos++] = 1;
 	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
-	init.cells[pos++] = 0;
+	init.cells[pos++] = 1;
+	init.cells[pos++] = 1;
 	init.cells[pos++] = 0;
 
 	env_t& ca = CellularAutomata(n, k, r, init, t);
 
-	size_t size = ca.X * ca.Y;
-	int* env = new int[size];
-	float *entropy = new float[ca.X];
+	float* mi = MutualInformation(ca, k);
 
-	for (size_t i = 0; i < size; i++) {
-		env[i] = ca.cells[i];
-	}
-
-	// Add vectors in parallel.
-	cudaError_t cudaStatus = BinarySiteEntropy(env, ca.X, ca.Y, entropy);
-
-	if (cudaStatus != cudaSuccess) {
-		fprintf(stderr, "BinarySiteEntropy failed!");
-		return 1;
-	}
-
-	for (size_t i = 0; i < ca.Y; i++) {
-		for (size_t j = 0; j < ca.X; j++) {
-			printf("%f\t", entropy[i]);
+	for (size_t x0 = 0; x0 < ca.X; x0++) {
+		for (size_t x1 = 0; x1 < ca.X; x1++) {
+			cout << mi[x0 + x1*ca.X] << "	";
 		}
-		printf("\n");
+
+		cout << endl;
 	}
 
-	// cudaDeviceReset must be called before exiting in order for profiling and
-	// tracing tools such as Nsight and Visual Profiler to show complete traces.
-	cudaStatus = cudaDeviceReset();
-	if (cudaStatus != cudaSuccess) {
-		fprintf(stderr, "cudaDeviceReset failed!");
-		return 1;
-	}
+	cout << endl;
 
 	return 0;
 }
@@ -268,7 +158,7 @@ tree_t::tree_t(size_t r, rule_t rule) {
 	nodes = new cell_t[size];
 
 	// Decompõe a regra em digitos binários, guardando-os nas folhas da arvore.
-	for (size_t i = size - pow(2, 2 * r + 1); i < size; i++) {
+	for (size_t i = size - static_cast<size_t>(pow(2, 2 * r + 1)); i < size; i++) {
 		nodes[i] = rule % 2;
 		rule /= 2;
 	}
@@ -304,3 +194,96 @@ size_t tree_t::treeSize(size_t r) {
 	return size;
 }
 
+
+/*!
+*
+* Informação Mútua mede a quantidade de informação que pode ser obtida sobre
+* uma variável aleatória, observando outra. É importante em comunicação, onde
+* ele pode ser utilizado para maximizar a quantidade de informação
+* compartilhada entre os sinais enviados e recebidos.
+*
+* No contexto dos Automatos Celulares (AC) a Informação Mútua entre duas
+* colunas da evolução temporal resultante da execução do AC oferece informação
+* importante sobre o comportamento dinâmico da regra.
+*
+* A informação mútua da coluna X' da evolução temporal do AC em relação a outra
+* coluna X" é dada por:
+*
+* I(X',X") = &Sigma;<SUB>x' &isin; X'</SUB>&Sigma;<SUB>x" &isin; X"</SUB> p(x',x")&sdot;log(p(x',x")/(p(x')p(x")))
+*/
+float* MutualInformation(env_t& m, cell_t k) {
+	size_t x, y;
+
+	// Define a matriz de probabilidade local da matriz m.
+	float *sitep = new float[m.X * k];
+
+	// Calcula a probabilidade local de cada estado de cada coluna.
+	for (x = 0; x < m.X; x++) {
+		// Zera a coluna da matriz de probabilidade local
+		for (y = 0; y < k; y++) {
+			sitep[x + y*m.X] = 0.0f;
+		}
+		// Acumula a quantidade de cada estado na coluna x.
+		for (y = 0; y < m.Y; y++) {
+			sitep[x + m.cells[x + y*m.X] * m.X] += (1.0f / m.Y);
+		}
+	}
+
+	// O cálculo da informação mútua é feito sobre todos os pares de colunas
+	// possíveis. Então será calculado a informação mútual das colunas (0,0),
+	// (1,0), (2,0), ... (X,0). Para cada par de coluna é calculado um valor de
+	// informação mútua, que serão guardados na primeira coluna da matriz
+	// resultante. Na sequência serão calculadas as informações mútual para os
+	// pares (0,1), (1,1), ..., (X,1) e serão guardados na segunda colna da
+	// matriz resultante.
+	//
+	// Isso mostra que a matriz resultante do cálculo da Informação Mútua é uma
+	// matriz quadrada X por X.
+	float *result = new float[m.X * m.X];
+	for (size_t n = 0; n < m.X*m.X; result[n++] = 0.0f);
+
+	// Define o vetor de probabilidade dos valores do par de colunas.
+	// O número de elementos do vetor é k^ncolunas. No caso, com são duas
+	// colunas, k^2.
+	float *colsp = new float[(k*k)];
+	// Indice do vetor colsp calculada pelo valor das colunas
+	size_t i;
+
+	float divisor;
+	cell_t cellv0, cellv1;
+
+	// Varia a primeira coluna da informação mútua.
+	for (size_t x0 = 0; x0 < m.X; x0++) {
+		// Varia a segunda coluna da informação mútua.
+		for (size_t x1 = 0; x1 < m.X; x1++) {
+			// Zera o vetor para fazer a contagem.
+			for (i = 0; i < (size_t)k*k; i++) {
+				colsp[i] = 0.0f;
+			}
+
+			// Calcula a probabilidade dos valores conjuntos das colunas
+			// (x0, x1)
+			for (y = 0; y < m.Y; y++) {
+				// Conversão de base para decimal.
+				i = m.cells[x0 + y*m.X] * k + m.cells[x0 + y*m.X];
+
+				colsp[i] += (1.0f / m.Y);
+			}
+
+			for (y = 0; y < m.Y; y++) {
+				i = m.cells[x0 + y*m.X] * k + m.cells[x0 + y*m.X];
+				cellv0 = m.cells[x0 + y*m.X];
+				cellv1 = m.cells[x1 + y*m.X];
+
+				divisor = sitep[x0 + cellv0*m.X] * sitep[x1 + cellv1*m.X];
+
+				result[x0 + x1*m.X] += colsp[i] * log(colsp[i] / divisor);
+			}
+		}
+	}
+
+	delete[] sitep;
+	delete[] colsp;
+
+	return result;
+}

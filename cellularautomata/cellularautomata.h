@@ -4,6 +4,9 @@ typedef long long rule_t;
 
 typedef unsigned short cell_t;
 
+/*!
+ *
+ */
 class env_t {
 public:
 	size_t X;
@@ -23,6 +26,9 @@ public:
 	~env_t();
 };
 
+/*!
+ *
+ */
 class tree_t {
 public:
 	size_t size;
@@ -65,8 +71,8 @@ private:
 * \param r O raio utilizado para se definir a vizinhança.
 * \param i Célula central da vizinhança.
 */
-cell_t TransitionFunction(tree_t& tree, cell_t* env, size_t r, size_t length,
-	size_t i);
+//cell_t TransitionFunction(tree_t& tree, cell_t* env, size_t r, size_t length,
+//	size_t i);
 
 /*!
 * Cria uma matriz como resultado da evolução temporal do Automato Celular.
@@ -81,3 +87,21 @@ cell_t TransitionFunction(tree_t& tree, cell_t* env, size_t r, size_t length,
 */
 env_t& CellularAutomata(rule_t n, cell_t k, size_t r, env_t& init,
 	size_t t, size_t transient = 0);
+
+/*!
+*
+* Informação Mútua mede a quantidade de informação que pode ser obtida sobre
+* uma variável aleatória, observando outra. É importante em comunicação, onde
+* ele pode ser utilizado para maximizar a quantidade de informação
+* compartilhada entre os sinais enviados e recebidos.
+*
+* No contexto dos Automatos Celulares (AC) a Informação Mútua entre duas
+* colunas da evolução temporal resultante da execução do AC oferece informação
+* importante sobre o comportamento dinâmico da regra.
+*
+* A informação mútua da coluna X' da evolução temporal do AC em relação a outra
+* coluna X" é dada por:
+*
+* I(X',X") = &Sigma;<SUB>x' &isin; X'</SUB>&Sigma;<SUB>x" &isin; X"</SUB> p(x',x")&sdot;log(p(x',x")/(p(x')p(x")))
+*/
+float* MutualInformation(env_t& m, cell_t k);
