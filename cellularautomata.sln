@@ -5,6 +5,8 @@ VisualStudioVersion = 12.0.40629.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cellularautomata", "cellularautomata\cellularautomata.vcxproj", "{81AAAC8B-9EDA-428B-93E4-2E6CC4702CB1}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "entropy", "entropy\entropy.vcxproj", "{3201B81D-4364-4851-A189-6F36AD222F51}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -21,6 +23,14 @@ Global
 		{81AAAC8B-9EDA-428B-93E4-2E6CC4702CB1}.Release|Win32.Build.0 = Release|Win32
 		{81AAAC8B-9EDA-428B-93E4-2E6CC4702CB1}.Release|x64.ActiveCfg = Release|x64
 		{81AAAC8B-9EDA-428B-93E4-2E6CC4702CB1}.Release|x64.Build.0 = Release|x64
+		{3201B81D-4364-4851-A189-6F36AD222F51}.Debug|Win32.ActiveCfg = Debug|Win32
+		{3201B81D-4364-4851-A189-6F36AD222F51}.Debug|Win32.Build.0 = Debug|Win32
+		{3201B81D-4364-4851-A189-6F36AD222F51}.Debug|x64.ActiveCfg = Debug|x64
+		{3201B81D-4364-4851-A189-6F36AD222F51}.Debug|x64.Build.0 = Debug|x64
+		{3201B81D-4364-4851-A189-6F36AD222F51}.Release|Win32.ActiveCfg = Release|Win32
+		{3201B81D-4364-4851-A189-6F36AD222F51}.Release|Win32.Build.0 = Release|Win32
+		{3201B81D-4364-4851-A189-6F36AD222F51}.Release|x64.ActiveCfg = Release|x64
+		{3201B81D-4364-4851-A189-6F36AD222F51}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

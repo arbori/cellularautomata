@@ -42,7 +42,7 @@ public:
 	}
 
 	C* host() const {
-		return _host;
+		return _host + _offset;
 	}
 
 	C* device() {
@@ -50,7 +50,7 @@ public:
 			checkCudaErrors(setDeviceMemory());
 		}
 
-		return _device;
+		return _device + _offset;
 	}
 
 	inline size_t size() const { return _size; }

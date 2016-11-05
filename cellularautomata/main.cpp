@@ -43,42 +43,20 @@ void readMatrix(ifstream& in, Memory<cell_t>& ca, int X, int Y) {
 	}
 }
 
-void testeEntropy(Memory<cell_t>& ca, int X, int Y, int Z = 1) {
-	Memory<float> entropy(X * Z);
-
-	Entropy(ca, entropy, X, Y, Z, 0, 2);
-	for (int z = 0; z < Z; z++) {
-		for (int x = 0; x < X; x++) {
-			cout << entropy[x + z*X] << ";";
-		}
-
-		cout << endl;
-	}
-
-	cout << endl;
-
-	Entropy(ca, entropy, X, Y, Z, 1, 2);
-	for (int z = 0; z < Z; z++) {
-		for (int x = 0; x < X; x++) {
-			cout << entropy[x + z*X] << ";";
-		}
-
-		cout << endl;
-	}
-
-	cout << endl;
-}
-
 void testPerformace() {
-	float dtdev, dthost;
+	float dtdev = 0.0f, dthost = 0.0f;
 	clock_t ini;
-	int EXPERIENCIAS = 1000;
+	int EXPERIENCIAS = 87;
 
-	int X = 16;
-	int Y = 32;
-	int Z = 3;
+	int X = 150;
+	int Y = 100;
+	int Z = 100;
+	int w = 10;
+	int r = 1;
+	int k = 2;
 	int length = X * Y * Z;
 	Memory<cell_t> ca(length);
+	Memory<float> entropy(Y * Z);
 	Memory<float> siteEntropy(X * Z);
 
 	RandomInteger(ca, length);
@@ -87,19 +65,35 @@ void testPerformace() {
 
 	ini = clock();
 	for (int i = 0; i < EXPERIENCIAS; i++) {
-		Entropy(ca, siteEntropy, X, Y, Z, 1, 2);
+		NeighborhoodEntropyDevice(ca, entropy, X, Y, Z, w, r, k);
 	}
 	dtdev = static_cast<float>(clock() - ini) / CLOCKS_PER_SEC;
-	cout << "Entropy: " << dtdev << "s" << endl;
+	cout << "NeighborhoodEntropyDevice.: " << dtdev << "s" << endl;
 
 	ini = clock();
 	for (int i = 0; i < EXPERIENCIAS; i++) {
-		EntropyHost(ca, siteEntropy, X, Y, Z, 1, 2);
+		NeighborhoodEntropy(ca, entropy, X, Y, Z, w, r, k);
 	}
 	dthost = static_cast<float>(clock() - ini) / CLOCKS_PER_SEC;
-	cout << "EntropyHost: " << dthost << "s" << endl;
+	cout << "NeighborhoodEntropy.......: " << dthost << "s" << endl;
 
-	cout << "Entropy / EntropyHost: " << dtdev / dthost << endl;
+	cout << "Performance...............: " << 100*(1 - (dtdev / dthost)) << "%\n\n";
+
+	ini = clock();
+	for (int i = 0; i < EXPERIENCIAS; i++) {
+		SiteEntropyDevice(ca, siteEntropy, X, Y, Z, r, k);
+	}
+	dtdev = static_cast<float>(clock() - ini) / CLOCKS_PER_SEC;
+	cout << "SiteEntropyDevice.........: " << dtdev << "s" << endl;
+
+	ini = clock();
+	for (int i = 0; i < EXPERIENCIAS; i++) {
+		SiteEntropy(ca, siteEntropy, X, Y, Z, r, k);
+	}
+	dthost = static_cast<float>(clock() - ini) / CLOCKS_PER_SEC;
+	cout << "SiteEntropy...............: " << dthost << "s" << endl;
+
+	cout << "Performance...............: " << 100 * (1 - (dtdev / dthost)) << "%\n\n";
 }
 
 void testeMutualInformation() {
@@ -194,8 +188,80 @@ void testeSpreading(string& filedata, int X, int Y, int Z) {
 	}
 }
 
-bool salvarRegra(string& filename, rule_t n, cell_t k, float r, size_t t, size_t transient, size_t width, size_t amostras,
-		Memory<cell_t>& init, Memory<float>& siteEntropy, Memory<float>& entropy, Memory<float>& mi, Memory<float>& spreading) {
+void testeEntropia(string& filedata, int X, int Y, int Z) {
+	size_t w = 2;
+	float r = 1;
+	cell_t k = 2;
+
+	Memory<cell_t> ca(X * Y * Z);
+	Memory<float> siteEntropy(X * Z);
+	Memory<float> entropy((Y - w + 1) * Z);
+
+	ifstream in(filedata.c_str());
+
+	if (in.is_open()) {
+		readMatrix(in, ca, X, Y*Z);
+
+		NeighborhoodEntropy(ca, entropy, X, Y, Z, w, r, k);
+		
+		for (int z = 0; z < Z; z++) {
+			for (int y = 0; y < (Y - w + 1); y++) {
+				cout << entropy[y + z*(Y - w + 1)] << ";";
+			}
+
+			cout << "\n";
+		}
+
+		cout << "\n\n";
+		
+		NeighborhoodEntropyDevice(ca, entropy, X, Y, Z, w, r, k);
+		
+		for (int z = 0; z < Z; z++) {
+			for (int y = 0; y < (Y - w + 1); y++) {
+				cout << entropy[y + z*(Y - w + 1)] << ";";
+			}
+
+			cout << "\n";
+		}
+
+		cout << "\n\n";
+		
+		SiteEntropy(ca, siteEntropy, X, Y, Z, r, k);
+
+		for (int z = 0; z < Z; z++) {
+			for (int x = 0; x < X; x++) {
+				cout << siteEntropy[x + z*X] << ";";
+			}
+
+			cout << "\n";
+		}
+
+		cout << "\n\n";
+
+		SiteEntropyDevice(ca, siteEntropy, X, Y, Z, r, k);
+
+		for (int z = 0; z < Z; z++) {
+			for (int x = 0; x < X; x++) {
+				cout << siteEntropy[x + z*X] << ";";
+			}
+
+			cout << "\n";
+		}
+
+		cout << "\n\n";
+	}
+	else {
+		cout << "Nao foi possivel abrir o arquivo " << filedata << endl;
+	}
+}
+
+bool salvarRegra(string& filename, rule_t n, cell_t k, float r,
+		size_t t, size_t transient, size_t width, size_t amostras, size_t w, 
+		Memory<cell_t>& init, 
+		Memory<float>& localEntropy, 
+		Memory<float>& neighborhoodEntropy, 
+		Memory<float>& mi, 
+		Memory<float>& spreading) {
 	ofstream fout;
 	
 	int X = width;
@@ -210,6 +276,7 @@ bool salvarRegra(string& filename, rule_t n, cell_t k, float r, size_t t, size_t
 
 	fout.precision(12);
 
+	/*
 	fout << "{\n\t{" 
 			<< n << "," << k << "," << r << "," << t << "," 
 			<< transient << "," << width << "," << amostras 
@@ -242,14 +309,21 @@ bool salvarRegra(string& filename, rule_t n, cell_t k, float r, size_t t, size_t
 	fout.setf(ios_base::fixed, ios_base::floatfield);
 
 	fout << "\t},\n\t{";
-	for (int z = 0; z < Z; z++) {
-		if (z == 0) {
+	*/
+	fout << "\t{";
+
+	X = t - transient;
+	Y = amostras;
+
+	for (int y = 0; y < (Y - w + 1); y++) {
+		if (y == 0) {
 			fout << "\n";
 		}
 
 		fout << "\t\t{";
+
 		for (int x = 0; x < X; x++) {
-			fout << siteEntropy[x + z*X];
+			fout << neighborhoodEntropy[x + y*X];
 
 			if (x < X - 1) {
 				fout << ",";
@@ -258,7 +332,7 @@ bool salvarRegra(string& filename, rule_t n, cell_t k, float r, size_t t, size_t
 
 		fout << "}";
 
-		if (z < Z - 1) {
+		if (y < Y - 1) {
 			fout << ",\n";
 		}
 		else {
@@ -266,6 +340,7 @@ bool salvarRegra(string& filename, rule_t n, cell_t k, float r, size_t t, size_t
 		}
 	}
 
+	/*
 	fout << "\t},\n\t{";
 
 	for (int z = 0; z < Z; z++) {
@@ -274,15 +349,27 @@ bool salvarRegra(string& filename, rule_t n, cell_t k, float r, size_t t, size_t
 		}
 
 		fout << "\t\t{";
-		for (int x = 0; x < X; x++) {
-			fout << entropy[x + z*X];
 
-			if (x < X - 1) {
-				fout << ",";
+		for (int y = 0; y < w; y++) {
+			fout << "\n\t\t\t{";
+
+			for (int x = 0; x < X; x++) {
+				fout << entropy[x + y*X + z*X*w];
+
+				if (x < X - 1) {
+					fout << ",";
+				}
+			}
+
+			if (y < w - 1) {
+				fout << "},";
+			}
+			else {
+				fout << "}";
 			}
 		}
 
-		fout << "}";
+		fout << "\n\t\t}";
 
 		if (z < Z - 1) {
 			fout << ",\n";
@@ -345,8 +432,10 @@ bool salvarRegra(string& filename, rule_t n, cell_t k, float r, size_t t, size_t
 
 		fout.setf(0, ios_base::floatfield);
 	}
+	*/
 
-	fout << "\t}\n}";
+//	fout << "\t}\n}";
+	fout << "\t}";
 
 	fout.flush();
 	fout.close();
@@ -357,12 +446,17 @@ bool salvarRegra(string& filename, rule_t n, cell_t k, float r, size_t t, size_t
 void calculoExperimento(string& dir, Memory<rule_t>& rules, cell_t k, float r, size_t t, size_t transient, size_t width, size_t amostras) {
 	StartRandom();
 
+	size_t w = 10;
 	size_t height = t - transient;
 
 	Memory<cell_t> mat(width * height * amostras);
 	Memory<cell_t> init(width * amostras);
-	Memory<float> siteEntropy(width * amostras);
-	Memory<float> entropy(width * amostras);
+	// Cada linha da entropia local será a entropia ao longo das colunas 
+	// da evolução temporal.
+	Memory<float> localEntropy(height * amostras);
+	// Cada linha da entropia da vizinhança será a entropia ao longo das 
+	// colunas da evolução temporal.
+	Memory<float> neighborhoodEntropy(height * amostras);
 	Memory<float> mi(width * width * amostras);
 	Memory<float> spreading(amostras * amostras);
 
@@ -396,20 +490,26 @@ void calculoExperimento(string& dir, Memory<rule_t>& rules, cell_t k, float r, s
 
 		cout << "\b\b\b\b\b\b\b\b\b\b          \b\b\b\b\b\b\b\b\b\b";
 
+		/*
 		// Calcula a entropia local
 		cout << "Calculando a Entropia Local...";
-		Entropy(mat, siteEntropy, width, height, amostras, 0, k);
+		Entropy(mat, localEntropy, width, height, amostras, w, r, k);
+
 		cout << "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b"
 			<< "                              "
 			<< "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b";
+		*/
 
 		// Entropia de vizinhança
 		cout << "Calculando a Entropia de viainhanca...";
-		Entropy(mat, entropy, width, height, amostras, r, k);
+		neighborhoodEntropy.assignAll(0.0f);
+		NeighborhoodEntropy(mat, neighborhoodEntropy, width, height, amostras, w, r, k);
+
 		cout << "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b"
 			<< "                                      "
 			<< "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b";
 
+		/*
 		// Informação Mútua
 		cout << "Calculando a Informacao Mutua...";
 		MutualInformation(mat, mi, k, width, height, amostras);
@@ -423,21 +523,22 @@ void calculoExperimento(string& dir, Memory<rule_t>& rules, cell_t k, float r, s
 		cout << "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b"
 			<< "                            "
 			<< "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b";
+		*/
 
 		cout << "Salvando experimento para a regra...";
-		salvarRegra(filename, rules[n], k, r, t, transient, width, amostras, init, siteEntropy, entropy, mi, spreading);
+		salvarRegra(filename, rules[n], k, r, t, transient, width, amostras, w, init, localEntropy, neighborhoodEntropy, mi, spreading);
 		cout << "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b"
 			<< "                                   "
 			<< "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b";
 	}
 }
 
-void main() {
+int main() {
 	/*
-	string dir = "C:\\Users\\arbor\\Source\\Repos\\cellularautomata\\output\\R1.0";
-	string filenameRules = "C:\\Users\\arbor\\Source\\Repos\\cellularautomata\\equivalente-rules-r1.0.data";
+	string dir = "F:\\output\\testeEntropy";
+	string filenameRules = "F:\\output\\testeEntropy\\rules-r1.0.data.test";
 
-	Memory<rule_t> rules(88);
+	Memory<rule_t> rules(1);
 
 	readRules(filenameRules, rules);
 
@@ -451,19 +552,31 @@ void main() {
 	calculoExperimento(dir, rules, k, r, t, transient, width, amostras);
 	*/
 
-	string dir = "F:\\Documents\\Doutorado\\CAClassification\\output\\R1.5";
-	string filenameRules = "C:\\Users\\arbor\\Source\\Repos\\cellularautomata\\equivalente-rules-r1.5.data";
+	/*************************************************************** /
+	string dir = "C:\\CAClassification\\output\\R1.5";
+	string filenameRules = "C:\\CAClassification\\equivalente-rules-r1.5.data";
 
-	Memory<rule_t> rules(16704);
+	Memory<rule_t> rules3_2(16704);
 
-	readRules(filenameRules, rules);
+	readRules(filenameRules, rules3_2);
 		
-	cell_t k = 2;
 	float r = 1.5;
+
+	cell_t k = 2;
 	size_t t = 300;
 	size_t transient = 200;
 	size_t width = 100;
 	size_t amostras = 150;
 
-	calculoExperimento(dir, rules, k, r, t, transient, width, amostras);
+	calculoExperimento(dir, rules3_2, k, r, t, transient, width, amostras);
+	*/
+
+/*
+	string filedata = "F:\\matrixTeste.txt";
+	testeEntropia(filedata, 5, 5, 2);
+*/
+
+	testPerformace();
+
+	return 0;
 }
